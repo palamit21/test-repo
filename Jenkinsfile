@@ -1,32 +1,22 @@
-pipeline {
-    agent any
+#!/usr/bin/groovy
 
-    stages {
-        stage ('Compile Stage') {
-
-            steps {
-                withMaven(maven : 'maven_3_5_4') {
-                    sh 'mvn clean compile'
-                }
-            }
-        }
-
-        stage ('Testing Stage') {
-
-            steps {
-                withMaven(maven : 'maven_3_5_4') {
-                    sh 'mvn test'
-                }
-            }
-        }
-
-
-        stage ('Deployment Stage') {
-            steps {
-                withMaven(maven : 'maven_3_5_4') {
-                    sh 'mvn deploy'
-                }
-            }
-        }
+podTemplate(
+  label: 'jenkins-pipeline', 
+  inheritFrom: 'default',
+  containers: [
+    containerTemplate(name: 'ng', image: 'alexsuch/angular-cli:1.6.1', command: 'cat', ttyEnabled: true)
+  ]
+) {
+  node ('jenkins-pipeline') {
+    stage ('Get Latest') {
+      checkout scm
     }
-}
+
+    stage ('Build') {
+      container ('ng') {
+        sh "npm install"
+        sh "ng build"
+      }
+    }
+  } // end node
+} // end podTemplate
